@@ -11,7 +11,7 @@ from app.analyzer import PlateAnalyzer
 
 ANNOTATIONS = "dataset/annotations.xml"
 IMAGES_DIR = "dataset/photos"
-MODEL_PATH = "models/plate_yolo.pt"
+MODEL_PATH = 'runs/plate_yolo/weights/best.pt'
 TEST_RATIO = 0.30
 
 

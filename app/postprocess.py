@@ -1,34 +1,42 @@
 import re
 
+MAX_LEN = 8
+MIN_LEN = 3
 
-class PlatePostProcessor:
-    def process(self, text: str) -> str:
-        text = re.sub(r'[^A-Z0-9]', '', text.upper())
 
-        # Remove garbage prefixes
-        while len(text) > 7 and text[0] in ['I', 'E', 'U', 'L', 'F', '1']:
-            text = text[1:]
+def clean(text: str) -> str:
+    if not text:
+        return ""
+    return re.sub(r"[^A-Z0-9]", "", text.upper())
 
-        if len(text) < 3:
-            return text
 
-        chars = list(text)
+def smart_postprocess(detected: str) -> str:
+    detected = clean(detected)
 
-        first_map = {
-            '0': 'O', '1': 'I', '2': 'Z', '4': 'A',
-            '5': 'S', '8': 'B', 'F': 'S', 'D': 'O'
-        }
+    if len(detected) < MIN_LEN:
+        return detected
 
-        rest_map = {
-            'O': '0', 'Q': '0', 'L': '1', 'B': '8'
-        }
+    chars = list(detected)
 
-        for i in range(min(2, len(chars))):
-            if chars[i] in first_map:
-                chars[i] = first_map[chars[i]]
+    for i, c in enumerate(chars):
+        # --- ZONE 1: PREFIX ---
+        if i < 2:
+            if c == '0': chars[i] = 'O'
+            elif c == '1': chars[i] = 'I'
+            elif c == '2': chars[i] = 'Z'
+            elif c == '5': chars[i] = 'S'
+            elif c == '6': chars[i] = 'G'
+            elif c == '8': chars[i] = 'B'
+            elif c == '4': chars[i] = 'A'
 
-        for i in range(2, len(chars)):
-            if chars[i] in rest_map:
-                chars[i] = rest_map[chars[i]]
+        # --- ZONE 2: SUFFIX ---
+        else:
+            if c in {'O', 'Q', 'D'}:
+                chars[i] = '0'
 
-        return "".join(chars[:8])
+    result = "".join(chars)
+
+    if len(result) > MAX_LEN:
+        result = result[:MAX_LEN]
+
+    return result

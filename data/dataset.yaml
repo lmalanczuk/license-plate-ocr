@@ -1,7 +1,0 @@
-path: C:\Users\lmala\OneDrive\Pulpit\AIProjects\license_plate_ocr\data
-train: images/train
-val: images/val
-test: images/test
-
-names:
-  0: plate
