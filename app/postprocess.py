@@ -19,7 +19,6 @@ def smart_postprocess(detected: str) -> str:
     chars = list(detected)
 
     for i, c in enumerate(chars):
-        # --- ZONE 1: PREFIX ---
         if i < 2:
             if c == '0': chars[i] = 'O'
             elif c == '1': chars[i] = 'I'
@@ -29,7 +28,6 @@ def smart_postprocess(detected: str) -> str:
             elif c == '8': chars[i] = 'B'
             elif c == '4': chars[i] = 'A'
 
-        # --- ZONE 2: SUFFIX ---
         else:
             if c in {'O', 'Q', 'D'}:
                 chars[i] = '0'

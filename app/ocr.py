@@ -44,7 +44,6 @@ class PlateOcr:
         if plate_bgr.size == 0:
             return ""
 
-        # --- minimal crop ---
         h, w = plate_bgr.shape[:2]
         margin = 0.02
         plate = plate_bgr[
@@ -52,7 +51,6 @@ class PlateOcr:
             int(w * margin):int(w * (1 - margin))
         ]
 
-        # --- blue strip ---
         plate = self._cut_blue_strip(plate)
 
         gray = cv2.cvtColor(plate, cv2.COLOR_BGR2GRAY)
