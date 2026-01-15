@@ -10,16 +10,18 @@ import yaml
 
 class YoloPreprocessor:
     def __init__(
-        self,
-        raw_dataset_dir: str = "dataset",
-        output_dir: str = "preprocessed_data",
-        train_ratio: float = 0.7,
-        class_name: str = "plate",
+            self,
+            raw_dataset_dir: str = "dataset",
+            output_dir: str = "preprocessed_data",
+            train_ratio: float = 0.7,
+            class_name: str = "plate",
+            random_seed: int = 42,
     ):
         self.raw_dataset_dir = Path(raw_dataset_dir)
         self.output_dir = Path(output_dir)
         self.train_ratio = train_ratio
         self.class_name = class_name
+        self.random_seed = random_seed
 
         self.images_src = self.raw_dataset_dir / "photos"
         self.xml_path = self.raw_dataset_dir / "annotations.xml"
@@ -28,6 +30,10 @@ class YoloPreprocessor:
         self.labels_out = self.output_dir / "labels"
 
     def prepare(self):
+        print("\n" + "=" * 50)
+        print("YOLO PREPROCESSING")
+        print("=" * 50)
+
         self._clean_output()
         self._create_dirs()
 
@@ -35,12 +41,14 @@ class YoloPreprocessor:
         self._split_and_save(samples)
         self._generate_dataset_yaml()
 
-        print("✅ Preprocessing finished successfully.")
+        print("=" * 50)
+        print("Preprocessing finished successfully.")
+        print("=" * 50 + "\n")
 
-    # ---------------- internal ----------------
 
     def _clean_output(self):
         if self.output_dir.exists():
+            print(f"Cleaning existing output directory: {self.output_dir}")
             shutil.rmtree(self.output_dir)
 
     def _create_dirs(self):
@@ -53,6 +61,7 @@ class YoloPreprocessor:
             p.mkdir(parents=True, exist_ok=True)
 
     def _parse_annotations(self):
+        print(f"Parsing annotations from: {self.xml_path}")
         tree = ET.parse(self.xml_path)
         root = tree.getroot()
 
@@ -76,13 +85,22 @@ class YoloPreprocessor:
             samples.append((name, boxes))
 
         if not samples:
-            raise RuntimeError("❌ No valid samples found in annotations.xml")
+            raise RuntimeError("No valid samples found in annotations.xml")
 
+        print(f"Found {len(samples)} valid samples")
         return samples
 
     def _split_and_save(self, samples):
+        random.seed(self.random_seed)
         random.shuffle(samples)
+
         split_idx = int(len(samples) * self.train_ratio)
+
+        train_samples = samples[:split_idx]
+        val_samples = samples[split_idx:]
+
+        print(
+            f"Split: {len(train_samples)} train, {len(val_samples)} val ({len(val_samples) / len(samples) * 100:.1f}% val)")
 
         for idx, (name, boxes) in enumerate(samples):
             subset = "train" if idx < split_idx else "val"
@@ -113,6 +131,8 @@ class YoloPreprocessor:
 
                     f.write(f"0 {cx} {cy} {bw} {bh}\n")
 
+        print(f"Images and labels copied to {self.output_dir}")
+
     def _generate_dataset_yaml(self):
         data = {
             "path": str(self.output_dir.resolve()),
@@ -122,5 +142,8 @@ class YoloPreprocessor:
             "names": [self.class_name],
         }
 
-        with open(self.output_dir / "dataset.yaml", "w") as f:
+        yaml_path = self.output_dir / "dataset.yaml"
+        with open(yaml_path, "w") as f:
             yaml.safe_dump(data, f, sort_keys=False)
+
+        print(f"Dataset YAML created: {yaml_path}")
